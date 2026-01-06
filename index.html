@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Budgeting - Priority Based with Capybara</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #a29bfe), url('https://i.imgur.com/4Z8m7wL.png') no-repeat center center fixed;
+            background-size: cover;
+            padding: 40px;
+            margin: 0;
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .capybara-icon {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .success { background: #d4edda; border-left: 5px solid #28a745; }
+        .warning { background: #fff3cd; border-left: 5px solid #ffc107; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        .add-item { margin-top: 20px; border-top: 1px solid #bdc3c7; padding-top: 20px; }
+        .item-list { margin-top: 20px; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
+        .item button { width: auto; padding: 5px 10px; margin-left: 10px; }
+        .capybara-mascot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            opacity: 0.7;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>
+        <img src="https://i.imgur.com/4Z8m7wL.png" alt="Capybara" class="capybara-icon">
+        💰 Budgeting Gaji (Prioritas) with Capybara
+    </h2>
+    <p>Berapa gaji/budget Anda hari ini? Masukkan dan kelola item prioritas Anda!</p>
+    <input type="number" id="salaryInput" placeholder="Masukkan angka, misal: 2500000">
+    
+    <div class="add-item">
+        <h3>Tambah Item Prioritas</h3>
+        <input type="text" id="itemName" placeholder="Nama item, misal: Konsumsi">
+        <input type="number" id="itemCost" placeholder="Biaya, misal: 2000000">
+        <select id="itemPriority">
+            <option value="1">Prioritas Rendah (1)</option>
+            <option value="5" selected>Prioritas Sedang (5)</option>
+            <option value="10">Prioritas Tinggi (10)</option>
+        </select>
+        <button onclick="addItem()">Tambah Item</button>
+    </div>
+    
+    <div class="item-list" id="itemListContainer">
+        <h3>Daftar Item Prioritas</h3>
+        <!-- Items will be added here dynamically -->
+    </div>
+    
+    <button onclick="optimizeBudget()">Analisis Alokasi</button>
+
+    <div id="resultBox" class="result">
+        <h3 id="statusTitle">Hasil Optimasi:</h3>
+        <ul id="selectedItems"></ul>
+        <hr>
+        <p id="summaryText"></p>
+    </div>
+</div>
+
+<img src="https://i.imgur.com/4Z8m7wL.png" alt="Capybara Mascot" class="capybara-mascot">
+
+<script>
+let items = [
+    {name: "Konsumsi (Pangan)", cost: 2000000, val: 10}, // Prioritas tinggi
+    {name: "Transportasi", cost: 1000000, val: 7},
+    {name: "Kuota Internet", cost: 500000, val: 6},
+    {name: "Investasi", cost: 1500000, val: 4},
+    {name: "Hiburan", cost: 1000000, val: 2}
+];
+
+function renderItems() {
+    const container = document.getElementById('itemListContainer');
+    container.innerHTML = '<h3>Daftar Item Prioritas</h3>' + items.map((item, index) => `
+        <div class="item">
+            <span><b>${item.name}</b>: Rp ${item.cost.toLocaleString()} (Prioritas: ${item.val})</span>
+            <button onclick="removeItem(${index})">Hapus</button>
+        </div>
+    `).join('');
+}
+
+function addItem() {
+    const name = document.getElementById('itemName').value.trim();
+    const cost = parseInt(document.getElementById('itemCost').value);
+    const priority = parseInt(document.getElementById('itemPriority').value);
+    
+    if (name && cost > 0 && priority > 0) {
+        items.push({name, cost, val: priority});
+        renderItems();
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemCost').value = '';
+    } else {
+        alert('Harap isi semua field dengan benar!');
+    }
+}
+
+function removeItem(index) {
+    items.splice(index, 1);
+    renderItems();
+}
+
+function optimizeBudget() {
+    const budget = parseInt(document.getElementById('salaryInput').value);
+    if (!budget || budget <= 0) {
+        alert('Harap masukkan budget yang valid!');
+        return;
+    }
+    
+    const resultBox = document.getElementById('resultBox');
+    const selectedList = document.getElementById('selectedItems');
+    
+    // Sorting berdasarkan efisiensi (Value/Cost)
+    items.sort((a, b) => (b.val / b.cost) - (a.val / a.cost));
+    
+    let currentCost = 0;
+    let selected = [];
+    
+    for (let item of items) {
+        if (currentCost + item.cost <= budget) {
+            currentCost += item.cost;
+            selected.push(item);
+        }
+    }
+    
+    // Logika Tampilan
+    resultBox.style.display = 'block';
+    if (selected.length > 0 && selected.some(i => i.name.toLowerCase().includes("konsumsi"))) {
+        resultBox.className = "result success";
+        document.getElementById('statusTitle').innerText = "✅ Budget Aman & Terencana - Capybara Approve!";
+    } else {
+        resultBox.className = "result warning";
+        document.getElementById('statusTitle').innerText = "⚠️ Budget Terlalu Rendah (CARI KERJA SANA) - Capybara Sedih :(";
+    }
+    
+    selectedList.innerHTML = selected.map(i => `<li><b>${i.name}</b>: Rp ${i.cost.toLocaleString()}</li>`).join('');
+    
+    const sisa = budget - currentCost;
+    document.getElementById('summaryText').innerHTML = `
+        Total Terpakai: <b>Rp ${currentCost.toLocaleString()}</b><br>
+        Sisa Gaji: <b>Rp ${sisa.toLocaleString()}</b><br>
+        ${sisa < 0 ? "Budget tidak cukup! Capybara sarankan hemat." : "Bagus! Capybara senang."}
+    `;
+}
+
+// Render initial items
+renderItems();
+</script>
+
+</body>
+</html>
